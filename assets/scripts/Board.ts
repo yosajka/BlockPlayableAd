@@ -23,7 +23,8 @@ export class Board extends Component {
                 this.grids.push(cell);
                 cell.coordinate.x = this.container.children.indexOf(child) % this.boardSize;
                 cell.coordinate.y = Math.floor(this.container.children.indexOf(child) / this.boardSize);
-                cell.label.string = cell.coordinate.x.toString() + "," + cell.coordinate.y.toString();
+                //cell.label.string = cell.coordinate.x.toString() + "," + cell.coordinate.y.toString();
+                cell.initTexture = cell.sprite.spriteFrame;
             }
         });
     }

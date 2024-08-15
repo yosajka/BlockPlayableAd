@@ -75,7 +75,7 @@
       "__id__": 1
     },
     "_children": [],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 3
@@ -326,6 +326,9 @@
     },
     "label": {
       "__id__": 5
+    },
+    "sprite": {
+      "__id__": 10
     },
     "_id": ""
   },

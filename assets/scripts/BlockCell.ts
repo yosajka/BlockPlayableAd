@@ -7,7 +7,7 @@ export class BlockCell extends Component {
     @property(Vec2)
     coordinate: Vec2 = new Vec2();
 
-    public gridCell: GridCell | null = null;
+    @property(GridCell) public gridCell: GridCell | null = null;
     public sprite: Sprite | null = null;
 
     start() {

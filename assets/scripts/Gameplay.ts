@@ -1,7 +1,8 @@
-import { _decorator, Component, Node, Tween, Vec3 } from 'cc';
+import { _decorator, Component, Label, Node, tween, Tween, Vec3 } from 'cc';
 import { Board } from './Board';
 import { Block } from './Block';
 import { GridCell } from './GridCell';
+import { BlockCell } from './BlockCell';
 const { ccclass, property } = _decorator;
 
 @ccclass('Gameplay')
@@ -11,10 +12,10 @@ export class Gameplay extends Component {
     // @export var block_scene: PackedScene
     @property(Block)
     public blocks: Block[] = [];
+    @property(Label)
+    public pointLabel: Label;
     @property(Node)
-    public point_label: Node;
-    @property(Node)
-    public win_screen: Node;
+    public winScreen: Node;
     @property(Node)
     public download_button: Node;
     @property(Node) 
@@ -25,8 +26,9 @@ export class Gameplay extends Component {
     @property(Node) canvas: Node;
     @property(Node) streak_2: Node;
     @property(Node) streak_3: Node;
-    @property(Node) tutorial_screen: Node;
-    @property(Node) tutorial_position: Node;
+    @property(Node) tutorialScreen: Node;
+    @property 
+    publictutorialPosition: Vec3;
     
 
     @property(Node) bgm: Node;
@@ -35,13 +37,13 @@ export class Gameplay extends Component {
 
     currentBlock: Block | null = null;
     cellsToRemove: GridCell[] = [];
-    point: number
-    time: number
-    streak: number
-    is_tutorial: boolean = true
-    isVfx: boolean = false
+    point: number = 0;
+    time: number;
+    streak: number;
+    isTutorial: boolean = true;
+    isVfx: boolean = false;
     // tutorial_tween: Tween
-    tutorial_hand: Node
+    tutorialHand: Node;
     
     start() {
         //this.currentBlock = this.blocks[0];
@@ -50,14 +52,30 @@ export class Gameplay extends Component {
             block.blockClicked.on('blockClicked', this.onBlockClicked, this);
             block.blockReleased.on('blockReleased', this.onBlockReleased, this);
         })
+
+        this.updatePoint();
+
+        // if (this.isTutorial) {
+        //     let tutorialBlock = this.blocks[2] as Block;
+        //     this.tutorialHand = tutorialBlock.node.getChildByName('Hand');
+        //     let tutorial_tween = tween(tutorialBlock.node).repeatForever(
+        //         tween(tutorialBlock.node)
+        //         .set({ position: tutorialBlock.initPosition })
+        //         .to(1, { position: this.tutorialPosition })
+        //         .delay(1)
+        //         .set({ position: tutorialBlock.initPosition })
+        //         .to(1, { position: this.tutorialPosition })
+        //         .delay(1)
+        //     ).start();
+            
+        // }
     }
 
     update(deltaTime: number) {        
         if (this.currentBlock != null && this.currentBlock.dragging) {
-            console.log('block clicked');
-            var first = this.currentBlock.grids[0];
-            var first_position = first.node.worldPosition;
-            var overlap_grid_cells = this.board.grids.filter((x) => Vec3.distance(x.node.worldPosition, first_position) < 25);
+            var first : BlockCell = this.currentBlock.grids[0];
+            var first_position : Vec3 = first.node.worldPosition;
+            var overlap_grid_cells : GridCell[] = this.board.grids.filter((x) => Vec3.distance(x.node.worldPosition, first_position) < 25);
             overlap_grid_cells = overlap_grid_cells.filter((x) => x.state == GridCell.STATE.EMPTY || x.state == GridCell.STATE.HOVERED);
             if (overlap_grid_cells.length > 0) {
                 overlap_grid_cells.sort((a, b) => {
@@ -70,13 +88,16 @@ export class Gameplay extends Component {
                     return 0; 
                 });
                 first.setGridCell(overlap_grid_cells[0]);
-
+                
                 for (let i = 1; i < this.currentBlock.grids.length; i++) {
                     let block_cell = this.currentBlock.grids[i];
-                    let grid_cell_coord = overlap_grid_cells[0].coordinate.add(block_cell.coordinate);
+                    let grid_cell_coord = overlap_grid_cells[0].coordinate.clone().add(block_cell.coordinate);
                     if (grid_cell_coord.x < this.board.boardSize && grid_cell_coord.y < this.board.boardSize) {
                         let grid_cell = this.board.grids[grid_cell_coord.y * this.board.boardSize + grid_cell_coord.x];
                         if (grid_cell.state == GridCell.STATE.EMPTY) {
+                            // console.log(block_cell.name);
+                            // console.log("grid_cell ", first.gridCell.coordinate);
+                            // console.log("grid_cell_coord: ", grid_cell_coord);
                             block_cell.setGridCell(grid_cell);
                         }
                     }
@@ -114,7 +135,27 @@ export class Gameplay extends Component {
     }
 
     onBlockPlaced(block: Block) {
-        
+        this.blocks = this.blocks.filter(b => b !== block);
+        block.node.destroy();
+
+        if (this.cellsToRemove.length > 0) {
+            this.cellsToRemove.forEach(cell => {
+                cell.sprite.spriteFrame = cell.emptyTexture;
+                cell.state = GridCell.STATE.EMPTY;
+                this.point += 1000;
+            })
+
+            this.cellsToRemove = [];
+            this.updatePoint();
+            this.updateStreak();
+            this.showCombo(block);
+        }
+
+        if (this.blocks.length <= 0) {
+            setTimeout(() => {
+                this.winScreen.active = true;
+            }, 1000);
+        }
     }
 
     onBlockReleased(block: Block) {
@@ -156,6 +197,18 @@ export class Gameplay extends Component {
             cell.sprite.spriteFrame = cell.initTexture;
         })
         this.cellsToRemove = [];
+    }
+
+    updatePoint() {
+        this.pointLabel.string = this.point.toString();
+    }
+
+    updateStreak() {
+        
+    }
+
+    showCombo(block: Block) {
+        
     }
 }
 

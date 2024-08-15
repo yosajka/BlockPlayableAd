@@ -24,10 +24,10 @@ export class GridCell extends Component {
     @property(Label)
     public label: Label | null = null;
 
-    public sprite: Sprite | null = null;
+    @property(Sprite) public sprite: Sprite | null = null;
 
     protected start(): void {
-        this.sprite = this.getComponent(Sprite);
+        //this.sprite = this.getComponent(Sprite);
     }
 }
 

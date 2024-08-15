@@ -12,8 +12,8 @@ export class Block extends Component {
     public xCoord: number[] = [];
     public dragging: boolean = false;
     private dragOffset: Vec3 = new Vec3(0, 5, 0);
-    public grids: BlockCell[] = [];
-    private initPosition: Vec3 = new Vec3();
+    @property(BlockCell) public grids: BlockCell[] = [];
+    public initPosition: Vec3 = new Vec3();
 
 
     // Events
