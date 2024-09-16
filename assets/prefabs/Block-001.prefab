@@ -764,8 +764,17 @@
     "__prefab": {
       "__id__": 37
     },
-    "combo": null,
+    "combo": {
+      "__uuid__": "4fb85d31-3530-45a4-aff3-1e1c3d71e628",
+      "__expectedType__": "cc.Prefab"
+    },
     "grids": [],
+    "initPosition": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_id": ""
   },
   {

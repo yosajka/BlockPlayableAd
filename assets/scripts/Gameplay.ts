@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, tween, Tween, Vec3 } from 'cc';
+import { _decorator, AudioSource, Button, screen, Component, instantiate, Label, Node, Prefab, Sprite, sys, tween, Tween, Vec3, view, macro, Vec2, log, Camera, Canvas } from 'cc';
 import { Board } from './Board';
 import { Block } from './Block';
 import { GridCell } from './GridCell';
@@ -7,11 +7,16 @@ const { ccclass, property } = _decorator;
 
 @ccclass('Gameplay')
 export class Gameplay extends Component {
+    @property(Camera)
+    public camera: Camera;
     @property(Board) 
     public board: Board;
-    // @export var block_scene: PackedScene
     @property(Block)
     public blocks: Block[] = [];
+    @property(Block)
+    public newBlocks: Block[] = [];
+    @property(Block)
+    public tutorialBlock : Block;
     @property(Label)
     public pointLabel: Label;
     @property(Node)
@@ -26,27 +31,51 @@ export class Gameplay extends Component {
     @property(Node) canvas: Node;
     @property(Node) streak_2: Node;
     @property(Node) streak_3: Node;
-    @property(Node) tutorialScreen: Node;
-    @property 
-    publictutorialPosition: Vec3;
+    @property(Node) streak_4: Node;
+    @property(Node) streak_5: Node;
+    @property(Button) tutorialScreen: Button;
+    @property(Vec3)
+    public tutorialPosition: Vec3 = new Vec3(0, 0, 0);
+    @property
+    public url : string = "";
     
+    @property(AudioSource) bgm: AudioSource;
+    @property(AudioSource) placeSFX: AudioSource;
+    @property(AudioSource) winSFX: AudioSource;
 
-    @property(Node) bgm: Node;
-    @property(Node) placeSFX: Node;
-    @property(Node) winSFX: Node;
-
+    @property(Block)
     currentBlock: Block | null = null;
     cellsToRemove: GridCell[] = [];
     point: number = 0;
     time: number;
-    streak: number;
-    isTutorial: boolean = true;
+    streak: number = 0;
+    @property isTutorial: boolean = true;
     isVfx: boolean = false;
-    // tutorial_tween: Tween
+    tutorialTween: Tween<Node> | null = null;
     tutorialHand: Node;
+
+    private isPortrait: boolean = false;
+
+    onLoad() {
+        screen.on('orientation-change', this.onOrientationChange, this);
+        screen.on('window-resize', this.onWindowResize, this);
+    }
     
     start() {
-        //this.currentBlock = this.blocks[0];
+
+        const gameDataDiv = document.getElementById('game-data');
+
+        if (gameDataDiv) {
+
+            this.url = gameDataDiv.getAttribute('url-data');
+
+            console.log(this.url);
+
+        } else {
+            console.error('Game data div not found!');
+        }
+        
+
         this.blocks.forEach(block => {
             block.blockPlaced.on('blockPlaced', this.onBlockPlaced, this);
             block.blockClicked.on('blockClicked', this.onBlockClicked, this);
@@ -55,23 +84,67 @@ export class Gameplay extends Component {
 
         this.updatePoint();
 
-        // if (this.isTutorial) {
-        //     let tutorialBlock = this.blocks[2] as Block;
-        //     this.tutorialHand = tutorialBlock.node.getChildByName('Hand');
-        //     let tutorial_tween = tween(tutorialBlock.node).repeatForever(
-        //         tween(tutorialBlock.node)
-        //         .set({ position: tutorialBlock.initPosition })
-        //         .to(1, { position: this.tutorialPosition })
-        //         .delay(1)
-        //         .set({ position: tutorialBlock.initPosition })
-        //         .to(1, { position: this.tutorialPosition })
-        //         .delay(1)
-        //     ).start();
-            
-        // }
+        if (this.isTutorial) {
+            this.tutorialScreen.node.active = true;
+            this.tutorialHand = this.tutorialBlock.node.getChildByName('Hand');
+            this.tutorialHand.active = true;
+            this.tutorialTween = tween(this.tutorialBlock.node).repeatForever(
+                tween(this.tutorialBlock.node)
+                .set({ position: this.tutorialBlock.initPosition })
+                .to(1, { position: this.tutorialPosition })
+                .delay(1)
+                .set({ position: this.tutorialBlock.initPosition })
+                .to(1, { position: this.tutorialPosition })
+                .delay(1)
+            ).start();
+        }
+
     }
 
-    update(deltaTime: number) {        
+    onOrientationChange(orientation: number) {
+        if (orientation === macro.ORIENTATION_LANDSCAPE_LEFT || orientation === macro.ORIENTATION_LANDSCAPE_RIGHT) {
+            this.onLandscape();
+        } 
+        else {
+            this.onPortrait();
+        }
+    }
+
+    onWindowResize(width: number, height: number) {
+        if (width > height) {
+            this.onLandscape();
+        }
+        else {
+            this.onPortrait();
+        }
+    }
+
+    onPortrait() {
+        this.isPortrait = true;
+        this.blocks.forEach(block => {
+            block.initPosition = block.portraitPosition;
+            block.node.position = block.initPosition;
+        })
+
+        //this.canvas.getComponent(Canvas).alignCanvasWithScreen = true;
+    }
+
+    onLandscape() {
+        this.isPortrait = false;
+        this.blocks.forEach(block => {
+            block.initPosition = block.landscapePosition;
+            block.node.position = block.initPosition;
+        })
+        this.canvas.getComponent(Canvas).alignCanvasWithScreen = false;
+        this.camera.orthoHeight = 500;
+        
+    }
+
+    update(deltaTime: number) {
+        if (!this.isTutorial) {
+            this.updateTime(deltaTime); 
+        }
+           
         if (this.currentBlock != null && this.currentBlock.dragging) {
             var first : BlockCell = this.currentBlock.grids[0];
             var first_position : Vec3 = first.node.worldPosition;
@@ -95,9 +168,6 @@ export class Gameplay extends Component {
                     if (grid_cell_coord.x < this.board.boardSize && grid_cell_coord.y < this.board.boardSize) {
                         let grid_cell = this.board.grids[grid_cell_coord.y * this.board.boardSize + grid_cell_coord.x];
                         if (grid_cell.state == GridCell.STATE.EMPTY) {
-                            // console.log(block_cell.name);
-                            // console.log("grid_cell ", first.gridCell.coordinate);
-                            // console.log("grid_cell_coord: ", grid_cell_coord);
                             block_cell.setGridCell(grid_cell);
                         }
                     }
@@ -114,52 +184,72 @@ export class Gameplay extends Component {
                 this.clearCellsToRemove();
             }
         }
-		
-    }
-
-    abv(block: Block) {
-        this.currentBlock = block;
     }
 
     onBlockClicked(block: Block) {
         if (!this.isVfx) {
             this.currentBlock = block;
-        } 
-        // console.log("before", this.timer);
-        // this.timer = 9999;
-        // console.log("after", this.timer);
-        // setTimeout(() => {
-        //     console.log('Delayed check:', this.timer);
-        // }, 1000);
-        
+        }         
     }
 
-    onBlockPlaced(block: Block) {
+    async onBlockPlaced(block: Block, combo: Prefab, position: Vec3, name: string) {
+        this.placeSFX.play();
         this.blocks = this.blocks.filter(b => b !== block);
-        block.node.destroy();
-
+        block.node.active = false;
+        
         if (this.cellsToRemove.length > 0) {
-            this.cellsToRemove.forEach(cell => {
-                cell.sprite.spriteFrame = cell.emptyTexture;
-                cell.state = GridCell.STATE.EMPTY;
-                this.point += 1000;
-            })
+            
+            await this.updateCells();
 
             this.cellsToRemove = [];
-            this.updatePoint();
+            
             this.updateStreak();
-            this.showCombo(block);
+            this.showCombo(block, combo, position, name);
         }
+
+        this.spawnNewBlock(block);
 
         if (this.blocks.length <= 0) {
             setTimeout(() => {
                 this.winScreen.active = true;
+                this.winSFX.play();
             }, 1000);
         }
+
+        block.node.destroy();
+    }
+
+    spawnNewBlock(oldBlock: Block) {
+        var block : Block = this.newBlocks.pop();
+        if (block == undefined) {
+            return;
+        }
+        
+        block.node.position = oldBlock.initPosition;
+        block.initPosition = oldBlock.initPosition;
+        this.blocks.push(block);
+        block.blockPlaced.on('blockPlaced', this.onBlockPlaced, this);
+        block.blockClicked.on('blockClicked', this.onBlockClicked, this);
+        block.blockReleased.on('blockReleased', this.onBlockReleased, this);
+        block.node.active = true;
+        
+    }
+
+    async updateCells() {
+        this.isVfx = true;
+        for (const cell of this.cellsToRemove) {
+            await new Promise(resolve => setTimeout(resolve, 20));
+            cell.vfx.enabled = true;
+            cell.sprite.spriteFrame = cell.emptyTexture;
+            cell.state = GridCell.STATE.EMPTY;
+            this.point += 100;
+            this.updatePoint();
+        }
+        this.isVfx = false;
     }
 
     onBlockReleased(block: Block) {
-
+        this.clearCellsToRemove();
     }
 
     getCellsToRemove() {
@@ -199,16 +289,89 @@ export class Gameplay extends Component {
         this.cellsToRemove = [];
     }
 
+    updateTime(delta: number) {
+        this.timer -= delta
+	    if (this.timer <= 0 && this.winScreen.active == false) {
+            this.winScreen.active = true;
+            this.winSFX.play()
+        }
+		
+    }
+
     updatePoint() {
         this.pointLabel.string = this.point.toString();
     }
 
     updateStreak() {
-        
+        this.streak += 1
+        if (this.streak == 2) {
+            this.streak_2.active = true;
+            setTimeout(() => {
+                this.streak_2.active = false;
+            }, 1000)
+        }
+        else if (this.streak == 3) {
+            this.streak_3.active = true;
+            setTimeout(() => {
+                this.streak_3.active = false;
+            }, 1000)
+        }
+        else if (this.streak == 4) {
+            this.streak_4.active = true;
+            setTimeout(() => {
+                this.streak_4.active = false;
+            }, 1000)
+        }
+        else if (this.streak == 5) {
+            this.streak_5.active = true;
+            setTimeout(() => {
+                this.streak_5.active = false;
+            }, 1000)
+        }
     }
 
-    showCombo(block: Block) {
+    showCombo(block: Block, _combo: Prefab, _position: Vec3, name : string) {
+        const combo = instantiate(_combo);
         
+        // Add the combo to the canvas
+        this.canvas.addChild(combo);
+        
+        combo.position = _position;
+        if (name == "Block-001" || name == "Block-003") {
+            combo.position = new Vec3(combo.position.x + 120, combo.position.y, combo.position.z);
+        }
+        
+        tween(combo)
+            .to(0.3, { scale: new Vec3(1.2, 1.2, 1.2) })
+            .start();
+
+        // combo.children.forEach(child => {
+        //     tween(child.getComponent(Sprite))
+        //         .to(0.3, { color: new Color(255, 255, 255, 0) })
+        //         .start();de
+        // });
+
+        // Remove the combo from the scene after the tween completes
+        this.scheduleOnce(() => {
+            combo.destroy();
+        }, 0.4);
+    }
+
+    onTutorialScreenTouched() {
+        this.tutorialScreen.node.active = false;
+        this.tutorialTween.stop();
+        this.tutorialHand.destroy();
+        this.tutorialBlock.node.position = this.tutorialBlock.initPosition;
+        this.isTutorial = false;
+        this.bgm.play();
+    }
+
+    onDownloadButtonClicked() {
+        sys.openURL(this.url);
+    }
+
+    onHomeDownloadButtonClicked() {
+        sys.openURL(this.url);
     }
 }
 

@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, Sprite, SpriteFrame, Vec2 } from 'cc';
+import { _decorator, Component, Label, Node, ParticleSystem2D, Sprite, SpriteFrame, Vec2 } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('GridCell')
@@ -25,6 +25,9 @@ export class GridCell extends Component {
     public label: Label | null = null;
 
     @property(Sprite) public sprite: Sprite | null = null;
+
+    @property(ParticleSystem2D)
+    public vfx : ParticleSystem2D | null = null;
 
     protected start(): void {
         //this.sprite = this.getComponent(Sprite);

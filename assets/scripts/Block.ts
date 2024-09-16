@@ -1,4 +1,4 @@
-import { _decorator, Color, Component, EventMouse, EventTarget, EventTouch, Input, input, log, Node, Prefab, Sprite, UITransform, Vec2, Vec3 } from 'cc';
+import { _decorator, Camera, Canvas, Color, Component, EventMouse, EventTarget, EventTouch, Input, input, log, Node, Prefab, Sprite, UITransform, Vec2, Vec3 } from 'cc';
 import { GridCell } from './GridCell';
 import { BlockCell } from './BlockCell';
 const { ccclass, property } = _decorator;
@@ -6,23 +6,25 @@ const { ccclass, property } = _decorator;
 @ccclass('Block')
 export class Block extends Component {
     @property(Prefab)
-    combo: Prefab | null = null;
+    public combo: Prefab | null = null;
 
     public yCoord: number[] = [];
     public xCoord: number[] = [];
     public dragging: boolean = false;
     private dragOffset: Vec3 = new Vec3(0, 5, 0);
     @property(BlockCell) public grids: BlockCell[] = [];
-    public initPosition: Vec3 = new Vec3();
-
+    @property(Vec3) public initPosition: Vec3 = new Vec3();
+    @property(Vec3) public portraitPosition: Vec3 = new Vec3();
+    @property(Vec3) public landscapePosition: Vec3 = new Vec3();
 
     // Events
     public blockClicked = new EventTarget();
     public blockPlaced = new EventTarget();
     public blockReleased = new EventTarget();
+    @property(Canvas) public canvas: Canvas;
 
     start() {
-        this.initPosition = this.node.worldPosition.clone();
+        //this.initPosition = this.node.worldPosition.clone();
         this.node.children.forEach(child => {
             const blockCell = child.getComponent(BlockCell);
             if (blockCell) {
@@ -41,11 +43,6 @@ export class Block extends Component {
     }
 
     onTouchStart(event: EventMouse | EventTouch) {
-        // if (this.node.parent.getComponent('GameManager').isTutorial) {
-        //     return;
-        // }
-        
-        
         const touchPos = event.getUILocation();
         for (const grid of this.grids) {
             const rect = grid.getComponent(UITransform).getBoundingBoxToWorld();
@@ -57,6 +54,35 @@ export class Block extends Component {
                 break;
             }
         }
+        // const touchPos = event.getUILocation();
+
+        // // Get the active camera in the scene (assuming the default camera for UI rendering)
+        // const camera = this.canvas.getComponent(UITransform).node.scene.getComponentInChildren(Camera);
+
+        // if (!camera) {
+        //     console.error("Camera not found");
+        //     return;
+        // }
+
+        // // Convert the screen-space touch position to world-space using the camera
+        // const worldTouchPos = camera.screenToWorld(new Vec3(touchPos.x, touchPos.y, 0));
+
+        // for (const grid of this.grids) {
+        //     const rect = grid.getComponent(UITransform).getBoundingBoxToWorld();
+
+        //     // Check if the world touch position is inside the grid's bounding box
+        //     if (rect.contains(new Vec2(worldTouchPos.x, worldTouchPos.y))) {
+        //         this.dragging = true;
+
+        //         // Get the world position of the current node and calculate the drag offset
+        //         const worldPos = this.node.worldPosition;
+        //         this.dragOffset = new Vec3(worldPos.x - worldTouchPos.x, worldPos.y - worldTouchPos.y, worldPos.z);
+
+        //         // Emit the blockClicked event
+        //         this.blockClicked.emit('blockClicked', this);
+        //         break;
+        //     }
+        // }
     }
 
     onTouchMove(event: EventMouse | EventTouch) {
@@ -80,9 +106,9 @@ export class Block extends Component {
                     cell.gridCell.sprite.color = Color.WHITE;
                     cell.gridCell.state = GridCell.STATE.TAKEN;
                 }
-                this.blockPlaced.emit('blockPlaced', this);
+                this.blockPlaced.emit('blockPlaced', this, this.combo, this.node.position, this.node.name);
             } else {
-                this.node.worldPosition = this.initPosition;
+                this.node.position = this.initPosition;
                 this.blockReleased.emit('blockReleased', this);
             }
             this.dragging = false;

@@ -17,7 +17,7 @@ export class BlockCell extends Component {
     update(deltaTime: number) {
         if (this.gridCell != null) {
             const distance = Vec2.distance(this.node.getWorldPosition(), this.gridCell.node.getWorldPosition());
-            if (distance > 50) {
+            if (distance > 25) {
                 this.removeGridCell();
             }
         }
