@@ -1,4 +1,4 @@
-import { _decorator, Color, Component, Node, Sprite, Vec2 } from 'cc';
+import { _decorator, Color, Component, EventMouse, EventTouch, Node, Sprite, Vec2, EventTarget } from 'cc';
 import { GridCell } from './GridCell';
 const { ccclass, property } = _decorator;
 
@@ -9,6 +9,32 @@ export class BlockCell extends Component {
 
     @property(GridCell) public gridCell: GridCell | null = null;
     public sprite: Sprite | null = null;
+
+    public blockCellClicked = new EventTarget();
+    public blockCellMoved = new EventTarget();
+    public blockCellReleased = new EventTarget();
+
+    onLoad(): void {
+        // this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
+        // this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
+        // this.node.on(Node.EventType.TOUCH_END, this.onTouchEnd, this);
+    }
+
+    onTouchStart(event: EventMouse | EventTouch) {
+        //console.log('onTouchStart');
+        this.blockCellClicked.emit('blockCellClicked', this, event.getUILocation());
+    }
+
+    onTouchMove(event: EventMouse | EventTouch) {
+        //console.log('onTouchMove');
+        let touchPos = event.getLocation();
+        this.blockCellMoved.emit('blockCellMoved', this, touchPos);
+    }
+
+    onTouchEnd(event: EventMouse | EventTouch) {
+        //console.log('onTouchEnd');
+        this.blockCellReleased.emit('blockCellReleased', this);
+    }
 
     start() {
         this.sprite = this.getComponent(Sprite);
@@ -42,5 +68,11 @@ export class BlockCell extends Component {
             this.gridCell = null;
         }
     }
+
+    // protected onDestroy(): void {
+    //     this.node.off(Node.EventType.TOUCH_START, this.onTouchStart, this);
+    //     this.node.off(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
+    //     this.node.off(Node.EventType.TOUCH_END, this.onTouchEnd, this);
+    // }
 }
 

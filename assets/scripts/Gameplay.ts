@@ -54,11 +54,14 @@ export class Gameplay extends Component {
     tutorialTween: Tween<Node> | null = null;
     tutorialHand: Node;
 
-    private isPortrait: boolean = false;
+    // @property(Vec3) downloadBtnLandscapePos: Vec3;
+    // @property(Vec3) downloadBtnPortraitPos: Vec3;
+    // @property(Node) logoLandscape: Node;
 
     onLoad() {
         screen.on('orientation-change', this.onOrientationChange, this);
         screen.on('window-resize', this.onWindowResize, this);
+        this.onWindowResize(view.getVisibleSize().width, view.getVisibleSize().height);
     }
     
     start() {
@@ -84,21 +87,25 @@ export class Gameplay extends Component {
 
         this.updatePoint();
 
+        this.StartTutorial();
+
+    }
+
+    private StartTutorial() {
         if (this.isTutorial) {
             this.tutorialScreen.node.active = true;
             this.tutorialHand = this.tutorialBlock.node.getChildByName('Hand');
             this.tutorialHand.active = true;
             this.tutorialTween = tween(this.tutorialBlock.node).repeatForever(
                 tween(this.tutorialBlock.node)
-                .set({ position: this.tutorialBlock.initPosition })
-                .to(1, { position: this.tutorialPosition })
-                .delay(1)
-                .set({ position: this.tutorialBlock.initPosition })
-                .to(1, { position: this.tutorialPosition })
-                .delay(1)
+                    .set({ position: this.tutorialBlock.initPosition })
+                    .to(1, { position: this.tutorialPosition })
+                    .delay(1)
+                    .set({ position: this.tutorialBlock.initPosition })
+                    .to(1, { position: this.tutorialPosition })
+                    .delay(1)
             ).start();
         }
-
     }
 
     onOrientationChange(orientation: number) {
@@ -120,24 +127,27 @@ export class Gameplay extends Component {
     }
 
     onPortrait() {
-        this.isPortrait = true;
         this.blocks.forEach(block => {
             block.initPosition = block.portraitPosition;
             block.node.position = block.initPosition;
         })
 
-        //this.canvas.getComponent(Canvas).alignCanvasWithScreen = true;
+        this.canvas.getComponent(Canvas).alignCanvasWithScreen = true;
+        this.camera.node.position = new Vec3(0, 0, 0);
+        //this.logoLandscape.active = false;
+        
     }
 
     onLandscape() {
-        this.isPortrait = false;
         this.blocks.forEach(block => {
             block.initPosition = block.landscapePosition;
             block.node.position = block.initPosition;
         })
         this.canvas.getComponent(Canvas).alignCanvasWithScreen = false;
-        this.camera.orthoHeight = 500;
-        
+        this.camera.orthoHeight = 450;
+        this.camera.node.position = new Vec3(0, 130, 0);
+        //this.logoLandscape.active = true;
+        //this.download_button.setPosition(this.downloadBtnLandscapePos);
     }
 
     update(deltaTime: number) {
@@ -213,6 +223,7 @@ export class Gameplay extends Component {
             setTimeout(() => {
                 this.winScreen.active = true;
                 this.winSFX.play();
+                this.download_button.position = this.download_button.position.add(new Vec3(0, 100, 0));
             }, 1000);
         }
 

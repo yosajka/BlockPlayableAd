@@ -41,10 +41,13 @@
       },
       {
         "__id__": 44
+      },
+      {
+        "__id__": 46
       }
     ],
     "_prefab": {
-      "__id__": 46
+      "__id__": 48
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -941,11 +944,84 @@
       "y": 0,
       "z": 0
     },
+    "portraitPosition": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "landscapePosition": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
     "_id": ""
   },
   {
     "__type__": "cc.CompPrefabInfo",
     "fileId": "a5baRlJ9lPjrCcPgPxSG9j"
+  },
+  {
+    "__type__": "cc.PolygonCollider2D",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 47
+    },
+    "tag": 0,
+    "_group": 1,
+    "_density": 1,
+    "_sensor": false,
+    "_friction": 0.2,
+    "_restitution": 0,
+    "_offset": {
+      "__type__": "cc.Vec2",
+      "x": 0,
+      "y": 0
+    },
+    "_points": [
+      {
+        "__type__": "cc.Vec2",
+        "x": -123.8,
+        "y": -175.1
+      },
+      {
+        "__type__": "cc.Vec2",
+        "x": -122.8,
+        "y": 47.1
+      },
+      {
+        "__type__": "cc.Vec2",
+        "x": 114.2,
+        "y": 47.6
+      },
+      {
+        "__type__": "cc.Vec2",
+        "x": 114.2,
+        "y": -75.2
+      },
+      {
+        "__type__": "cc.Vec2",
+        "x": -12.1,
+        "y": -78.4
+      },
+      {
+        "__type__": "cc.Vec2",
+        "x": -11.4,
+        "y": -174.5
+      }
+    ],
+    "_id": ""
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "8cO0YOrX1NcJjmmI0k3s+8"
   },
   {
     "__type__": "cc.PrefabInfo",

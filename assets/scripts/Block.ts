@@ -1,4 +1,4 @@
-import { _decorator, Camera, Canvas, Color, Component, EventMouse, EventTarget, EventTouch, Input, input, log, Node, Prefab, Sprite, UITransform, Vec2, Vec3 } from 'cc';
+import { _decorator, Camera, Color, Component, EventMouse, EventTarget, EventTouch, Input, input, Node, Prefab, UITransform, Vec2, Vec3 } from 'cc';
 import { GridCell } from './GridCell';
 import { BlockCell } from './BlockCell';
 const { ccclass, property } = _decorator;
@@ -16,12 +16,12 @@ export class Block extends Component {
     @property(Vec3) public initPosition: Vec3 = new Vec3();
     @property(Vec3) public portraitPosition: Vec3 = new Vec3();
     @property(Vec3) public landscapePosition: Vec3 = new Vec3();
+    @property(Camera) public camera: Camera;
 
     // Events
     public blockClicked = new EventTarget();
     public blockPlaced = new EventTarget();
     public blockReleased = new EventTarget();
-    @property(Canvas) public canvas: Canvas;
 
     start() {
         //this.initPosition = this.node.worldPosition.clone();
@@ -29,21 +29,68 @@ export class Block extends Component {
             const blockCell = child.getComponent(BlockCell);
             if (blockCell) {
                 this.grids.push(blockCell);
+                // blockCell.blockCellClicked.on('blockCellClicked', this.onBlockCellClicked, this);
+                // blockCell.blockCellMoved.on('blockCellMoved', this.onBlockCellMoved, this);
+                // blockCell.blockCellReleased.on('blockCellReleased', this.onBlockCellReleased, this);
             }
         });
 
+        //this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
+        //this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
+        //input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
         input.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
         input.on(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
         input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
-        input.on(Input.EventType.MOUSE_DOWN, this.onTouchStart, this);
+        //input.on(Input.EventType.MOUSE_DOWN, this.onTouchStart, this);
     }
 
     update(deltaTime: number) {
         // Empty update function
     }
 
+    onBlockCellClicked(blockCell: BlockCell, touchPos: Vec2) {
+        if (this.grids.indexOf(blockCell) === -1) {
+            return;
+        }
+        this.dragging = true;
+        const worldPos = this.node.worldPosition;
+        //this.dragOffset = new Vec3(worldPos.x - touchPos.x, worldPos.y - touchPos.y, worldPos.z);
+        this.blockClicked.emit('blockClicked', this);
+    }
+
+    onBlockCellMoved(blockCell: BlockCell, touchPos: Vec2) {
+        if (this.dragging) {
+            let newTPos = this.camera.screenToWorld(new Vec3(touchPos.x, touchPos.y, 0));
+            const newPos = new Vec3(
+                newTPos.x + this.dragOffset.x,
+                newTPos.y + this.dragOffset.y + 100,
+                this.node.worldPosition.z
+            );
+            this.node.worldPosition = newPos;
+        }
+    }
+
+    onBlockCellReleased(blockCell: BlockCell) {
+        console.log('Released');
+        if (this.dragging) {
+            if (this.canPlace()) {
+                for (const cell of this.grids) {
+                    cell.gridCell.sprite.spriteFrame = cell.sprite.spriteFrame;
+                    cell.gridCell.initTexture = cell.sprite.spriteFrame;
+                    cell.gridCell.sprite.color = Color.WHITE;
+                    cell.gridCell.state = GridCell.STATE.TAKEN;
+                }
+                this.blockPlaced.emit('blockPlaced', this, this.combo, this.node.position, this.node.name);
+            } else {
+                this.node.position = this.initPosition;
+                this.blockReleased.emit('blockReleased', this);
+            }
+            this.dragging = false;
+        }
+    }
+
     onTouchStart(event: EventMouse | EventTouch) {
-        const touchPos = event.getUILocation();
+        const touchPos = this.camera.screenToWorld(new Vec3(event.getLocation().x, event.getLocation().y, 0));
         for (const grid of this.grids) {
             const rect = grid.getComponent(UITransform).getBoundingBoxToWorld();
             if (rect.contains(new Vec2(touchPos.x, touchPos.y))) {
@@ -54,40 +101,11 @@ export class Block extends Component {
                 break;
             }
         }
-        // const touchPos = event.getUILocation();
-
-        // // Get the active camera in the scene (assuming the default camera for UI rendering)
-        // const camera = this.canvas.getComponent(UITransform).node.scene.getComponentInChildren(Camera);
-
-        // if (!camera) {
-        //     console.error("Camera not found");
-        //     return;
-        // }
-
-        // // Convert the screen-space touch position to world-space using the camera
-        // const worldTouchPos = camera.screenToWorld(new Vec3(touchPos.x, touchPos.y, 0));
-
-        // for (const grid of this.grids) {
-        //     const rect = grid.getComponent(UITransform).getBoundingBoxToWorld();
-
-        //     // Check if the world touch position is inside the grid's bounding box
-        //     if (rect.contains(new Vec2(worldTouchPos.x, worldTouchPos.y))) {
-        //         this.dragging = true;
-
-        //         // Get the world position of the current node and calculate the drag offset
-        //         const worldPos = this.node.worldPosition;
-        //         this.dragOffset = new Vec3(worldPos.x - worldTouchPos.x, worldPos.y - worldTouchPos.y, worldPos.z);
-
-        //         // Emit the blockClicked event
-        //         this.blockClicked.emit('blockClicked', this);
-        //         break;
-        //     }
-        // }
     }
 
     onTouchMove(event: EventMouse | EventTouch) {
         if (this.dragging) {
-            const touchPos = event.getUILocation();
+            const touchPos = this.camera.screenToWorld(new Vec3(event.getLocation().x, event.getLocation().y, 0));
             const newPos = new Vec3(
                 touchPos.x + this.dragOffset.x,
                 touchPos.y + this.dragOffset.y + 100,
