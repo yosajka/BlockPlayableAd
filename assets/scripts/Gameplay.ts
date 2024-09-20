@@ -54,14 +54,18 @@ export class Gameplay extends Component {
     tutorialTween: Tween<Node> | null = null;
     tutorialHand: Node;
 
-    // @property(Vec3) downloadBtnLandscapePos: Vec3;
-    // @property(Vec3) downloadBtnPortraitPos: Vec3;
-    // @property(Node) logoLandscape: Node;
-
+    @property(Vec3) downloadBtnLandscapePos: Vec3 = new Vec3(0, 0, 0);
+    @property(Vec3) downloadBtnPortraitPos: Vec3 = new Vec3(0, 0, 0);
+    @property(Node) logoLandscape: Node;
+    @property(Node) logoPortrait: Node;
+    @property(Node) icon: Node
+    @property isLogoVersion: boolean = false;
+    @property isDownloadBtnVersion: boolean = false;
     onLoad() {
         screen.on('orientation-change', this.onOrientationChange, this);
         screen.on('window-resize', this.onWindowResize, this);
-        this.onWindowResize(view.getVisibleSize().width, view.getVisibleSize().height);
+        
+        //this.onOrientationChange(view.getori)
     }
     
     start() {
@@ -77,7 +81,6 @@ export class Gameplay extends Component {
         } else {
             console.error('Game data div not found!');
         }
-        
 
         this.blocks.forEach(block => {
             block.blockPlaced.on('blockPlaced', this.onBlockPlaced, this);
@@ -85,17 +88,32 @@ export class Gameplay extends Component {
             block.blockReleased.on('blockReleased', this.onBlockReleased, this);
         })
 
+        if (this.isLogoVersion) {
+            this.icon.active = true;
+            this.logoPortrait.active = true;
+            this.pointLabel.node.active = false;
+        }
+
+        if (this.isDownloadBtnVersion) {
+            this.home_download_button.active = true;
+            this.pointLabel.fontSize = 40;
+            this.pointLabel.node.setPosition(new Vec3(-304, 458, 0));
+        }
+
         this.updatePoint();
 
-        this.StartTutorial();
+        this.onWindowResize(screen.windowSize.width, screen.windowSize.height);
 
     }
 
-    private StartTutorial() {
+    private startTutorial() {
         if (this.isTutorial) {
             this.tutorialScreen.node.active = true;
             this.tutorialHand = this.tutorialBlock.node.getChildByName('Hand');
             this.tutorialHand.active = true;
+            if (this.tutorialTween) {
+                this.tutorialTween.stop();
+            }
             this.tutorialTween = tween(this.tutorialBlock.node).repeatForever(
                 tween(this.tutorialBlock.node)
                     .set({ position: this.tutorialBlock.initPosition })
@@ -118,7 +136,7 @@ export class Gameplay extends Component {
     }
 
     onWindowResize(width: number, height: number) {
-        if (width > height) {
+        if (width >= height) {
             this.onLandscape();
         }
         else {
@@ -135,7 +153,18 @@ export class Gameplay extends Component {
         this.canvas.getComponent(Canvas).alignCanvasWithScreen = true;
         this.camera.node.position = new Vec3(0, 0, 0);
         //this.logoLandscape.active = false;
+
+        if (this.isLogoVersion) {
+            this.logoPortrait.active = true;
+            this.icon.active = true;
+        }
+    
         
+        this.logoLandscape.active = false;
+
+        this.home_download_button.setPosition(this.downloadBtnPortraitPos);
+
+        this.startTutorial();
     }
 
     onLandscape() {
@@ -146,8 +175,21 @@ export class Gameplay extends Component {
         this.canvas.getComponent(Canvas).alignCanvasWithScreen = false;
         this.camera.orthoHeight = 450;
         this.camera.node.position = new Vec3(0, 130, 0);
-        //this.logoLandscape.active = true;
-        //this.download_button.setPosition(this.downloadBtnLandscapePos);
+
+        if (!this.winScreen.active) {
+            this.home_download_button.setPosition(this.downloadBtnLandscapePos);
+        }
+        
+
+        this.logoPortrait.active = false;
+        if (!this.winScreen.active) {
+            this.logoLandscape.active = true;
+        }
+        
+        this.icon.active = false;
+
+        this.startTutorial();
+        
     }
 
     update(deltaTime: number) {
@@ -222,8 +264,9 @@ export class Gameplay extends Component {
         if (this.blocks.length <= 0) {
             setTimeout(() => {
                 this.winScreen.active = true;
+                this.home_download_button.active = false;
                 this.winSFX.play();
-                this.download_button.position = this.download_button.position.add(new Vec3(0, 100, 0));
+                this.logoLandscape.active = false;
             }, 1000);
         }
 
@@ -304,7 +347,13 @@ export class Gameplay extends Component {
         this.timer -= delta
 	    if (this.timer <= 0 && this.winScreen.active == false) {
             this.winScreen.active = true;
+            this.home_download_button.active = false;
             this.winSFX.play()
+            this.blocks.forEach(block => {
+                block.node.destroy();
+            })
+            this.blocks = [];
+            this.logoLandscape.active = false;
         }
 		
     }
