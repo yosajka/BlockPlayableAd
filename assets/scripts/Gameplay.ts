@@ -3,6 +3,9 @@ import { Board } from './Board';
 import { Block } from './Block';
 import { GridCell } from './GridCell';
 import { BlockCell } from './BlockCell';
+import super_html_playable from '../super_html_playable';
+
+
 const { ccclass, property } = _decorator;
 
 @ccclass('Gameplay')
@@ -61,26 +64,55 @@ export class Gameplay extends Component {
     @property(Node) icon: Node
     @property isLogoVersion: boolean = false;
     @property isDownloadBtnVersion: boolean = false;
+    @property isFB: boolean = false;
+    @property isIronSource: boolean = false;
     onLoad() {
         screen.on('orientation-change', this.onOrientationChange, this);
         screen.on('window-resize', this.onWindowResize, this);
         
         //this.onOrientationChange(view.getori)
+        //window.unmuteAudio = this.unmuteAudio.bind(this);
+        //window.muteAudio = this.muteAudio.bind(this);
+        if (dapi.isReady()) {
+            let isAudioEnabled = !!dapi.getAudioVolume();
+            if (isAudioEnabled){
+                console.log("Audio is enabled");
+                this.unmuteAudio();
+            } else {
+                console.log("Audio is disabled");
+                this.muteAudio();
+            }
+            dapi.addEventListener("audioVolumeChange", this.audioVolumeChangeCallback);
+        }
+        else
+        {
+            console.log("Dapi is not ready");
+        }
+        
     }
-    
+
+    audioVolumeChangeCallback(volume) {
+        let isAudioEnabled = !!volume;
+        if (isAudioEnabled){
+            this.unmuteAudio();
+        } else {
+            this.muteAudio();
+        }
+    }
+
     start() {
 
-        const gameDataDiv = document.getElementById('game-data');
+        // const gameDataDiv = document.getElementById('game-data');
 
-        if (gameDataDiv) {
+        // if (gameDataDiv) {
 
-            this.url = gameDataDiv.getAttribute('url-data');
+        //     this.url = gameDataDiv.getAttribute('url-data');
 
-            console.log(this.url);
+        //     console.log(this.url);
 
-        } else {
-            console.error('Game data div not found!');
-        }
+        // } else {
+        //     console.error('Game data div not found!');
+        // }
 
         this.blocks.forEach(block => {
             block.blockPlaced.on('blockPlaced', this.onBlockPlaced, this);
@@ -101,7 +133,7 @@ export class Gameplay extends Component {
         }
 
         this.updatePoint();
-
+        //this.startTutorial();
         this.onWindowResize(screen.windowSize.width, screen.windowSize.height);
 
     }
@@ -423,15 +455,44 @@ export class Gameplay extends Component {
         this.tutorialHand.destroy();
         this.tutorialBlock.node.position = this.tutorialBlock.initPosition;
         this.isTutorial = false;
+        //this.muteAudio();
         this.bgm.play();
     }
 
+    muteAudio() {
+        this.bgm.volume = 0;
+        this.winSFX.volume = 0;
+        this.placeSFX.volume = 0;
+        console.log("mute audio from cocos");
+    }
+
+    unmuteAudio() {
+        this.bgm.volume = 1;
+        this.winSFX.volume = 1;
+        this.placeSFX.volume = 1;
+        console.log("unmute audio from cocos");
+    }
+
     onDownloadButtonClicked() {
-        sys.openURL(this.url);
+        //sys.openURL(this.url);
+        if (this.isFB) {
+            window.FBPlayableOnCTAClick();
+        }
+        
+        if (this.isIronSource) {
+            window.userClickedDownloadButton();
+        }
     }
 
     onHomeDownloadButtonClicked() {
-        sys.openURL(this.url);
+        //sys.openURL(this.url);
+        if (this.isFB) {
+            window.FBPlayableOnCTAClick();
+        }
+        if (this.isIronSource) {
+            window.userClickedDownloadButton();
+        }
+        super_html_playable.download();
     }
 }
 

@@ -6,13 +6,15 @@
   "injectOptions": {
     "AppLovin": {
       "head": "<script>console.log('AppLovin')</script>",
-      "body": "<div id=\"game-data\" url-data=\"https://apps.apple.com/us/app/block-puzzle-cash-challenge/id6468560010\"></div>"
+      "body": "<div id=\"game-data\" url-data=\"https://apps.apple.com/us/app/block-puzzle-cash-challenge/id6468560010\"></div>\n"
     },
     "IronSource": {
-      "body": "<script>window.onload=function(){(dapi.isReady())?onReadyCallback():dapi.addEventListener(\"ready\",onReadyCallback)};function onReadyCallback(){dapi.removeEventListener(\"ready\",onReadyCallback);let isAudioEnabled=!!dapi.getAudioVolume();if(dapi.isViewable()){adVisibleCallback({isViewable:true})}dapi.addEventListener(\"viewableChange\",adVisibleCallback);dapi.addEventListener(\"adResized\",adResizeCallback);dapi.addEventListener(\"audioVolumeChange\",audioVolumeChangeCallback)}function adVisibleCallback(event){if(event.isViewable){screenSize=dapi.getScreenSize()}else{}}function adResizeCallback(event){}function userClickedDownloadButton(event){}function audioVolumeChangeCallback(volume){}</script><div id=\"game-data\" url-data=\"https://apps.apple.com/us/app/block-puzzle-cash-challenge/id6468560010\"></div>"
+      "body": "<script> window.addEventListener(\"load\", function(){ (dapi.isReady()) ? onReadyCallback() : dapi.addEventListener(\"ready\", onReadyCallback); }); function onReadyCallback(){ dapi.removeEventListener(\"ready\", onReadyCallback); let isAudioEnabled = !!dapi.getAudioVolume(); if(dapi.isViewable()){ adVisibleCallback({isViewable: true}); } dapi.addEventListener(\"viewableChange\", adVisibleCallback); dapi.addEventListener(\"adResized\", adResizeCallback); dapi.addEventListener(\"audioVolumeChange\", audioVolumeChangeCallback); }; function startGame() { var screenSize = dapi.getScreenSize(); }; function pauseGame() { }; function adVisibleCallback(event){ console.log(\"isViewable \" + event.isViewable); if (event.isViewable){ startGame(); } else { pauseGame(); } }; function adResizeCallback(event){ var screenSize = event; console.log(\"ad was resized width \" + event.width + \" height \" + event.height); }; function audioVolumeChangeCallback(volume){ }; function userClickedDownloadButton(event){ dapi.openStoreUrl(); }; </script>\n"
     },
     "Facebook": {
-        "body": "<script type=\"text/javascript\"> window.FBPlayableOnCTAClick = () => { (typeof FbPlayableAd === 'undefined') ? alert('FBPlayableAd.onCTAClick') : FbPlayableAd.onCTAClick(); } </script><div id=\"game-data\" url-data=\"https://apps.apple.com/us/app/block-puzzle-cash-challenge/id6468560010\"></div>"
+        "body": "<script type=\"text/javascript\"> window.FBPlayableOnCTAClick = () => { (typeof FbPlayableAd === 'undefined') ? console.log('FbPlayableAd is undefined') : FbPlayableAd.onCTAClick(); } </script>\n"
     }
-  }
+  },
+  "isZip": "false"
+  
 }
